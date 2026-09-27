@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard - Phishing Website Detector</title>
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind (CDN build, config extended below to match the brand colors) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#667eea',
+                        secondary: '#764ba2',
+                        danger: '#ff6b6b',
+                        success: '#51cf66',
+                        warning: '#ffd43b',
+                        darkbg: '#1a1a2e',
+                        darkbg2: '#0f0f23'
+                    },
+                    boxShadow: {
+                        card: '0 10px 30px rgba(0, 0, 0, 0.1)',
+                        'card-lg': '0 20px 60px rgba(0, 0, 0, 0.15)'
+                    },
+                    keyframes: {
+                        slideInLeft: {
+                            '0%': { opacity: 0, transform: 'translateX(-50px)' },
+                            '100%': { opacity: 1, transform: 'translateX(0)' }
+                        },
+                        floatY: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        slideUp: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    },
+                    animation: {
+                        'slide-in-left': 'slideInLeft 0.8s ease both',
+                        float: 'floatY 3s ease-in-out infinite',
+                        'slide-up': 'slideUp 0.6s ease both'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Flowbite gives us the tooltip on the theme toggle -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js" defer></script>
+
+    <!-- Small custom stylesheet for the handful of things Tailwind utilities can't do cleanly -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="font-sans bg-slate-50 text-slate-800 dark:bg-darkbg2 dark:text-slate-200 transition-colors duration-300">
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-50 bg-white/95 dark:bg-darkbg/95 backdrop-blur-md shadow-card">
+        <div class="max-w-6xl mx-auto px-5 h-[70px] flex items-center justify-between relative">
+
+            <div class="flex items-center gap-2 text-2xl font-bold">
+                <i class="fas fa-shield-alt text-primary"></i>
+                <span class="bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">PhishGuard</span>
+            </div>
+
+            <ul id="navLinks"
+                class="nav-links hidden md:flex flex-col md:flex-row items-center gap-0 md:gap-8
+                       absolute md:static top-[70px] left-0 right-0
+                       bg-white dark:bg-darkbg md:bg-transparent md:dark:bg-transparent
+                       shadow-card md:shadow-none z-40">
+                <li class="nav-item w-full md:w-auto border-b md:border-0 border-slate-200 dark:border-slate-700">
+                    <a href="#home" class="nav-link block px-5 py-4 md:p-0 font-medium hover:text-primary transition-colors">Home</a>
+                </li>
+                <li class="nav-item w-full md:w-auto border-b md:border-0 border-slate-200 dark:border-slate-700">
+                    <a href="#features" class="nav-link block px-5 py-4 md:p-0 font-medium hover:text-primary transition-colors">Features</a>
+                </li>
+                <li class="nav-item w-full md:w-auto border-b md:border-0 border-slate-200 dark:border-slate-700">
+                    <a href="#how-it-works" class="nav-link block px-5 py-4 md:p-0 font-medium hover:text-primary transition-colors">How It Works</a>
+                </li>
+                <li class="nav-item w-full md:w-auto border-b md:border-0 border-slate-200 dark:border-slate-700">
+                    <a href="#about" class="nav-link block px-5 py-4 md:p-0 font-medium hover:text-primary transition-colors">About</a>
+                </li>
+                <li class="w-full md:w-auto px-5 py-4 md:p-0 flex md:block">
+                    <span id="themeToggle" data-tooltip-target="theme-tooltip" data-tooltip-placement="bottom"
+                          class="cursor-pointer text-lg text-primary hover:rotate-[20deg] inline-block transition-transform duration-300">
+                        <i class="fas fa-moon"></i>
+                    </span>
+                    <div id="theme-tooltip" role="tooltip"
+                         class="absolute z-50 invisible inline-block px-3 py-2 text-xs font-medium text-white bg-slate-900 rounded-md shadow-sm opacity-0 tooltip">
+                        Toggle theme
+                        <div class="tooltip-arrow" data-popper-arrow></div>
+                    </div>
+                </li>
+            </ul>
+
+            <div id="hamburger" class="md:hidden flex flex-col gap-[5px] cursor-pointer p-2">
+                <span class="hb-bar w-6 h-0.5 bg-slate-800 dark:bg-slate-200 rounded transition-transform duration-300"></span>
+                <span class="hb-bar w-6 h-0.5 bg-slate-800 dark:bg-slate-200 rounded transition-opacity duration-300"></span>
+                <span class="hb-bar w-6 h-0.5 bg-slate-800 dark:bg-slate-200 rounded transition-transform duration-300"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section relative overflow-hidden bg-gradient-to-br from-primary to-secondary text-white py-20 px-5 min-h-[600px] flex items-center" id="home">
+        <div class="hero-blob-1 absolute -top-1/2 -right-1/2 w-[500px] h-[500px] rounded-full bg-white/10"></div>
+        <div class="hero-blob-2 absolute -bottom-[30%] -left-[30%] w-[300px] h-[300px] rounded-full bg-white/5"></div>
+
+        <div class="relative z-10 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 leading-tight animate-slide-in-left">
+                    Protect Yourself from Phishing Attacks
+                </h1>
+                <p class="text-base sm:text-lg mb-8 opacity-95 animate-slide-in-left [animation-delay:0.1s]">
+                    Advanced AI-powered detection to keep your digital life secure
+                </p>
+                <a href="#checker"
+                   class="inline-flex items-center gap-2 bg-white text-primary px-10 py-4 rounded-full font-semibold shadow-[0_10px_25px_rgba(0,0,0,0.2)] hover:-translate-y-1 hover:shadow-[0_15px_35px_rgba(0,0,0,0.3)] transition-all duration-300 animate-slide-in-left [animation-delay:0.2s]">
+                    <i class="fas fa-search"></i> Check Now
+                </a>
+            </div>
+            <div class="hidden lg:flex justify-center items-center h-[400px]">
+                <i class="fas fa-shield-alt text-[200px] animate-float drop-shadow-[0_10px_20px_rgba(0,0,0,0.2)]"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 px-5 bg-slate-50 dark:bg-darkbg2" id="features">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-center text-3xl md:text-4xl font-bold mb-14 bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">
+                Why Choose PhishGuard?
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+                <div class="feature-card rounded-xl p-px bg-gradient-to-br from-primary to-secondary shadow-card hover:shadow-card-lg hover:-translate-y-2 transition-all duration-300 animate-slide-up" style="animation-delay:0.1s">
+                    <div class="h-full rounded-xl bg-white dark:bg-darkbg px-6 py-10 text-center">
+                        <i class="fas fa-brain text-5xl mb-5 bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent"></i>
+                        <h3 class="text-xl font-semibold mb-2">AI-Powered</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Machine learning algorithms trained on millions of URLs</p>
+                    </div>
+                </div>
+
+                <div class="feature-card rounded-xl p-px bg-gradient-to-br from-primary to-secondary shadow-card hover:shadow-card-lg hover:-translate-y-2 transition-all duration-300 animate-slide-up" style="animation-delay:0.2s">
+                    <div class="h-full rounded-xl bg-white dark:bg-darkbg px-6 py-10 text-center">
+                        <i class="fas fa-bolt text-5xl mb-5 bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent"></i>
+                        <h3 class="text-xl font-semibold mb-2">Instant Results</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Get results in milliseconds with real-time analysis</p>
+                    </div>
+                </div>
+
+                <div class="feature-card rounded-xl p-px bg-gradient-to-br from-primary to-secondary shadow-card hover:shadow-card-lg hover:-translate-y-2 transition-all duration-300 animate-slide-up" style="animation-delay:0.3s">
+                    <div class="h-full rounded-xl bg-white dark:bg-darkbg px-6 py-10 text-center">
+                        <i class="fas fa-lock text-5xl mb-5 bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent"></i>
+                        <h3 class="text-xl font-semibold mb-2">100% Secure</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Your data is never stored or shared with third parties</p>
+                    </div>
+                </div>
+
+                <div class="feature-card rounded-xl p-px bg-gradient-to-br from-primary to-secondary shadow-card hover:shadow-card-lg hover:-translate-y-2 transition-all duration-300 animate-slide-up" style="animation-delay:0.4s">
+                    <div class="h-full rounded-xl bg-white dark:bg-darkbg px-6 py-10 text-center">
+                        <i class="fas fa-chart-line text-5xl mb-5 bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent"></i>
+                        <h3 class="text-xl font-semibold mb-2">High Accuracy</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">95%+ accuracy rate in phishing detection</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Checker Section -->
+    <section class="py-20 px-5 bg-slate-50 dark:bg-darkbg2" id="checker">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-card-lg">
+
+                <!-- Left Panel - Input -->
+                <div class="p-8 sm:p-12 bg-gradient-to-br from-primary to-secondary text-white">
+                    <h2 class="text-2xl sm:text-3xl font-bold mb-2">Check Your URL</h2>
+                    <p class="opacity-95 mb-8">Enter a URL to check if it's legitimate or phishing</p>
+
+                    <form id="predictionForm" class="flex flex-col gap-5">
+                        <div>
+                            <input
+                                type="text"
+                                id="urlInput"
+                                placeholder="Enter URL here... (e.g., https://example.com)"
+                                autocomplete="off"
+                                class="w-full px-5 py-4 rounded-lg border-2 border-white/30 bg-white/95 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-white focus:shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all duration-300"
+                            >
+                            <div id="urlValidation" class="h-5 mt-1 text-xs flex items-center gap-1"></div>
+                        </div>
+
+                        <div class="flex gap-5">
+                            <label class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2.5 rounded-lg cursor-pointer transition-colors duration-300">
+                                <input type="radio" name="method" value="features" checked class="accent-white cursor-pointer">
+                                <span>URL Features</span>
+                            </label>
+                            <label class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2.5 rounded-lg cursor-pointer transition-colors duration-300">
+                                <input type="radio" name="method" value="content" class="accent-white cursor-pointer">
+                                <span>Content Analysis</span>
+                            </label>
+                        </div>
+
+                        <button type="submit"
+                                class="flex items-center justify-center gap-2 bg-white text-primary font-semibold px-8 py-4 rounded-lg shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.3)] active:translate-y-0 transition-all duration-300">
+                            <i class="fas fa-magnifying-glass"></i>
+                            <span>Analyze URL</span>
+                        </button>
+                    </form>
+
+                    <div class="mt-8 pt-8 border-t border-white/20">
+                        <p class="mb-4 opacity-90">Quick examples:</p>
+                        <button type="button" onclick="fillExample('https://www.google.com')"
+                                class="quick-btn mr-2 mb-2 px-4 py-2 text-sm bg-white/15 hover:bg-white/25 border border-white/30 hover:border-white rounded-md transition-colors duration-300">
+                            Google
+                        </button>
+                        <button type="button" onclick="fillExample('https://www.facebook.com')"
+                                class="quick-btn mr-2 mb-2 px-4 py-2 text-sm bg-white/15 hover:bg-white/25 border border-white/30 hover:border-white rounded-md transition-colors duration-300">
+                            Facebook
+                        </button>
+                        <button type="button" onclick="fillExample('https://secure-paypal-login.com')"
+                                class="quick-btn mr-2 mb-2 px-4 py-2 text-sm bg-white/15 hover:bg-white/25 border border-white/30 hover:border-white rounded-md transition-colors duration-300">
+                            Suspicious
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel - Results -->
+                <div class="p-8 sm:p-12 min-h-[500px] flex items-center justify-center bg-slate-50 dark:bg-darkbg2">
+
+                    <div id="resultPanel" class="hidden w-full">
+                        <div id="resultContent" class="w-full bg-white dark:bg-darkbg rounded-xl p-8 sm:p-10 shadow-card"></div>
+                    </div>
+
+                    <div id="loadingPanel" class="hidden w-full flex-col items-center justify-center">
+                        <div class="flex flex-col items-center gap-5">
+                            <div class="spinner-wrap">
+                                <div class="spinner-ring"></div>
+                                <div class="spinner-ring"></div>
+                                <div class="spinner-ring"></div>
+                            </div>
+                            <p class="text-slate-500 dark:text-slate-400">Analyzing URL...</p>
+                        </div>
+                    </div>
+
+                    <div id="errorPanel" class="hidden w-full flex justify-center">
+                        <div class="text-center bg-gradient-to-br from-danger to-[#ff4444] text-white p-10 rounded-xl shadow-card">
+                            <i class="fas fa-exclamation-circle text-5xl mb-5 block"></i>
+                            <p id="errorMessage" class="text-base"></p>
+                        </div>
+                    </div>
+
+                    <div id="welcomePanel" class="w-full text-center opacity-60">
+                        <i class="fas fa-search text-7xl text-primary opacity-50 mb-5 block"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Ready to Check?</h3>
+                        <p class="text-slate-500 dark:text-slate-400">Enter a URL on the left to get started</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="py-20 px-5 bg-white dark:bg-darkbg" id="how-it-works">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-center text-3xl md:text-4xl font-bold mb-14 bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">
+                How It Works
+            </h2>
+            <div class="flex flex-col md:flex-row flex-wrap justify-center items-center gap-8">
+                <div class="text-center max-w-[200px]">
+                    <div class="w-14 h-14 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-2xl font-bold">1</div>
+                    <h3 class="font-semibold mb-2">Enter URL</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Paste any URL you want to verify</p>
+                </div>
+
+                <i class="fas fa-arrow-right text-2xl text-primary rotate-90 md:rotate-0"></i>
+
+                <div class="text-center max-w-[200px]">
+                    <div class="w-14 h-14 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-2xl font-bold">2</div>
+                    <h3 class="font-semibold mb-2">Analysis</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Our AI analyzes URL patterns and features</p>
+                </div>
+
+                <i class="fas fa-arrow-right text-2xl text-primary rotate-90 md:rotate-0"></i>
+
+                <div class="text-center max-w-[200px]">
+                    <div class="w-14 h-14 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-2xl font-bold">3</div>
+                    <h3 class="font-semibold mb-2">Results</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Get instant verdict with confidence score</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-20 px-5 bg-gradient-to-br from-primary to-secondary text-white">
+        <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
+            <div>
+                <h3 class="text-4xl sm:text-5xl font-bold mb-2">1M+</h3>
+                <p class="opacity-95">URLs Analyzed</p>
+            </div>
+            <div>
+                <h3 class="text-4xl sm:text-5xl font-bold mb-2">95%</h3>
+                <p class="opacity-95">Accuracy Rate</p>
+            </div>
+            <div>
+                <h3 class="text-4xl sm:text-5xl font-bold mb-2">50K+</h3>
+                <p class="opacity-95">Users Protected</p>
+            </div>
+            <div>
+                <h3 class="text-4xl sm:text-5xl font-bold mb-2">24/7</h3>
+                <p class="opacity-95">Always Available</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="py-20 px-5 bg-slate-50 dark:bg-darkbg2" id="about">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-center text-3xl md:text-4xl font-bold mb-14 bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">
+                About PhishGuard
+            </h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4">Cybersecurity Made Simple</h3>
+                    <p class="text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
+                        PhishGuard is an advanced phishing detection system using machine learning to protect users
+                        from malicious websites. Our AI model is trained on millions of URLs to identify phishing
+                        attempts with high accuracy.
+                    </p>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3"><i class="fas fa-check text-success"></i> Real-time URL analysis</li>
+                        <li class="flex items-center gap-3"><i class="fas fa-check text-success"></i> Zero data storage policy</li>
+                        <li class="flex items-center gap-3"><i class="fas fa-check text-success"></i> Continuous model updates</li>
+                        <li class="flex items-center gap-3"><i class="fas fa-check text-success"></i> Free for everyone</li>
+                    </ul>
+                </div>
+                <!--
+                <div>
+                    <img src="https://cdn-icons-png.flaticon.com/512/4436/4436481.png" alt="Security" class="w-full max-w-sm mx-auto rounded-xl shadow-card-lg">
+                </div>
+                -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-darkbg text-slate-400 pt-12 px-5 pb-5">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-10">
+                <div>
+                    <h4 class="text-white mb-3 text-base">PhishGuard</h4>
+                    <p class="text-sm leading-relaxed">Protecting users from phishing attacks with AI</p>
+                </div>
+                <div>
+                    <h4 class="text-white mb-3 text-base">Quick Links</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#home" class="hover:text-primary transition-colors duration-300">Home</a></li>
+                        <li><a href="#features" class="hover:text-primary transition-colors duration-300">Features</a></li>
+                        <li><a href="#how-it-works" class="hover:text-primary transition-colors duration-300">How It Works</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white mb-3 text-base">Follow Us</h4>
+                    <div class="flex gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white hover:-translate-y-1 transition-all duration-300"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white hover:-translate-y-1 transition-all duration-300"><i class="fab fa-github"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white hover:-translate-y-1 transition-all duration-300"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center pt-5 border-t border-white/10 text-sm">
+                <p>&copy; 2026 PhishGuard. All rights reserved. <b class="text-white"><a href="https://www.linkedin.com/in/deepakprajapati0052/">Built by Deepak Prajapati</a> <a href="https://www.linkedin.com/in/akashsrivastava-dev/">& Akash Srivastava</a></b></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
